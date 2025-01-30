@@ -78,13 +78,14 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.inccommand = 'split'
 
 -- Show which line your cursor is on
-vim.opt.cursorline = true
+vim.opt.cursorline = false
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
+--  Escape inert mode keymap
 vim.api.nvim_set_keymap('i', 'jj', '<ESC>', { noremap = true, silent = true })
 
 -- Quick save and quit
@@ -95,6 +96,15 @@ vim.keymap.set('n', '<leader>x', ':x<CR>', { noremap = true, silent = true }) --
 -- Open and reload neovim config
 vim.keymap.set('n', '<leader>ev', ':edit $MYVIMRC<CR>', { noremap = true, silent = true }) -- Edit config
 vim.keymap.set('n', '<leader>sv', ':source $MYVIMRC<CR>', { noremap = true, silent = true }) -- Reload config
+
+-- Tabby Keybinds
+vim.api.nvim_set_keymap('n', '<leader>ta', ':$tabnew<CR>', { noremap = true }) -- New tab
+vim.api.nvim_set_keymap('n', '<leader>tc', ':tabclose<CR>', { noremap = true }) -- Close tab
+vim.api.nvim_set_keymap('n', '<leader>to', ':tabonly<CR>', { noremap = true }) -- Close all other tabs
+vim.api.nvim_set_keymap('n', '<leader>tn', ':tabn<CR>', { noremap = true }) -- Next tab
+vim.api.nvim_set_keymap('n', '<leader>tp', ':tabp<CR>', { noremap = true }) -- Previous tab
+vim.api.nvim_set_keymap('n', '<leader>tmp', ':-tabmove<CR>', { noremap = true }) -- Move tab left
+vim.api.nvim_set_keymap('n', '<leader>tmn', ':+tabmove<CR>', { noremap = true }) -- Move tab right
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -554,8 +564,8 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
+        gopls = {},
+        pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -563,9 +573,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
-
+        ts_ls = {},
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -596,14 +604,14 @@ require('lazy').setup({
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
+        'stylua',
+        'prettier',
+        'eslint_d',
+        'black',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
-        ensure_installed = ensure_installed,
-        automatic_installation = true,
-
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -922,7 +930,7 @@ require('lazy').setup({
   --    this is the easiest way to modularize your config.
   --
   --  uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- for additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- or use telescope!
