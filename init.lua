@@ -86,32 +86,53 @@ vim.opt.scrolloff = 10
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 --  Escape inert mode keymap
-vim.api.nvim_set_keymap('i', 'jj', '<ESC>', { noremap = true, silent = true })
+vim.keymap.set('i', 'jj', '<ESC>', { noremap = true, silent = true })
 
 -- Quick save and quit
 vim.keymap.set('n', '<leader>w', ':w<CR>', { noremap = true, silent = true }) -- Save
 vim.keymap.set('n', '<leader>q', ':q<CR>', { noremap = true, silent = true }) -- Quit
-vim.keymap.set('n', '<leader>x', ':x<CR>', { noremap = true, silent = true }) -- Save & Quit
+vim.keymap.set('n', '<leader>x', ':w | bd<CR>', { noremap = true, silent = true }) -- Soft save & quit
 
 -- Open and reload neovim config
 vim.keymap.set('n', '<leader>ev', ':edit $MYVIMRC<CR>', { noremap = true, silent = true }) -- Edit config
 vim.keymap.set('n', '<leader>sv', ':source $MYVIMRC<CR>', { noremap = true, silent = true }) -- Reload config
 
 -- Tabby Keybinds
-vim.api.nvim_set_keymap('n', '<leader>ta', ':$tabnew<CR>', { noremap = true }) -- New tab
-vim.api.nvim_set_keymap('n', '<leader>tc', ':tabclose<CR>', { noremap = true }) -- Close tab
-vim.api.nvim_set_keymap('n', '<leader>to', ':tabonly<CR>', { noremap = true }) -- Close all other tabs
-vim.api.nvim_set_keymap('n', '<leader>tn', ':tabn<CR>', { noremap = true }) -- Next tab
-vim.api.nvim_set_keymap('n', '<leader>tp', ':tabp<CR>', { noremap = true }) -- Previous tab
-vim.api.nvim_set_keymap('n', '<leader>tmp', ':-tabmove<CR>', { noremap = true }) -- Move tab left
-vim.api.nvim_set_keymap('n', '<leader>tmn', ':+tabmove<CR>', { noremap = true }) -- Move tab right
+vim.keymap.set('n', '<leader>ta', ':$tabnew<CR>', { noremap = true }) -- New tab
+vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { noremap = true }) -- Close tab
+vim.keymap.set('n', '<leader>to', ':tabonly<CR>', { noremap = true }) -- Close all other tabs
+vim.keymap.set('n', '<leader>tn', ':tabn<CR>', { noremap = true }) -- Next tab
+vim.keymap.set('n', '<leader>tp', ':tabp<CR>', { noremap = true }) -- Previous tab
+vim.keymap.set('n', '<leader>th', ':-tabmove<CR>', { noremap = true }) -- Move tab left
+vim.keymap.set('n', '<leader>tl', ':+tabmove<CR>', { noremap = true }) -- Move tab right
+vim.keymap.set('n', '<leader>tm', ':terminal<CR> | 3j | $ | a', { desc = 'Open [T]erminal' }, { noremap = true })
+vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { noremap = true, silent = true })
+
+-- Function to toggle between nvim-cmp and blink-cmp
+vim.g.completion_engine = 'blink-cmp' -- Default to nvim-cmp
+
+function ToggleCompletionEngine()
+  if vim.g.completion_engine == 'nvim-cmp' then
+    vim.g.completion_engine = 'blink-cmp'
+    require('cmp').setup.buffer { enabled = false }
+    require('blink-cmp').setup()
+    print 'Switched to blink-cmp'
+  else
+    vim.g.completion_engine = 'nvim-cmp'
+    require('cmp').setup()
+    print 'Switched to nvim-cmp'
+  end
+end
+
+-- Keybinding to toggle between cmp engines
+vim.keymap.set('n', '<leader>cc', ':lua ToggleCompletionEngine()<CR>', { noremap = true, silent = true })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix lit' })
+-- vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix lit' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -135,6 +156,10 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
+-- [[RIPGREP]]
+vim.o.grepprg = 'rg --vimgrep --smart-case'
+vim.o.grepformat = '%f:%l:%c:%m'
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -395,7 +420,14 @@ require('lazy').setup({
       library = {
         -- Load luvit types when the `vim.uv` word is found
         { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+        i,
       },
+      vim.keymap.set('n', '<leader>s/', function()
+        builtin.live_grep {
+          grep_open_files = true,
+          prompt_title = 'Live Grep in Open Files',
+        }
+      end, { desc = '[S]earch [/] in Open Files' }),
     },
   },
   {
@@ -528,11 +560,11 @@ require('lazy').setup({
           -- code, if the language server you are using supports them
           --
           -- This may be unwanted, since they displace some of your code
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
-            map('<leader>th', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
-          end
+          -- if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+          --   map('<leader>th', function()
+          --     vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+          --   end, '[T]oggle Inlay [H]ints')
+          -- end
         end,
       })
 
@@ -667,146 +699,6 @@ require('lazy').setup({
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
     },
-  },
-
-  { -- Autocompletion
-    'hrsh7th/nvim-cmp',
-    event = 'InsertEnter',
-    dependencies = {
-      -- Snippet Engine & its associated nvim-cmp source
-      {
-        'L3MON4D3/LuaSnip',
-        build = (function()
-          -- Build Step is needed for regex support in snippets.
-          -- This step is not supported in many windows environments.
-          -- Remove the below condition to re-enable on windows.
-          if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then
-            return
-          end
-          return 'make install_jsregexp'
-        end)(),
-        dependencies = {
-          -- `friendly-snippets` contains a variety of premade snippets.
-          --    See the README about individual language/framework/plugin snippets:
-          --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
-        },
-      },
-      'saadparwaiz1/cmp_luasnip',
-
-      -- Adds other completion capabilities.
-      --  nvim-cmp does not ship with all sources by default. They are split
-      --  into multiple repos for maintenance purposes.
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-path',
-    },
-    config = function()
-      -- See `:help cmp`
-      local cmp = require 'cmp'
-      local luasnip = require 'luasnip'
-      luasnip.config.setup {}
-
-      cmp.setup {
-        snippet = {
-          expand = function(args)
-            luasnip.lsp_expand(args.body)
-          end,
-        },
-        completion = { completeopt = 'menu,menuone,noinsert' },
-
-        -- For an understanding of why these mappings were
-        -- chosen, you will need to read `:help ins-completion`
-        --
-        -- No, but seriously. Please read `:help ins-completion`, it is really good!
-        mapping = cmp.mapping.preset.insert {
-          -- Select the [n]ext item
-          ['<C-j>'] = cmp.mapping.select_next_item(),
-          -- Select the [p]revious item
-          ['<C-k>'] = cmp.mapping.select_prev_item(),
-
-          ['<Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-
-          ['<S-Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_prev_item()
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-
-          ['<CR>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.confirm { select = true }
-            else
-              fallback()
-            end
-          end, { 'i', 's' }),
-
-          -- scroll the documentation window [b]ack / [f]orward
-          ['<c-b>'] = cmp.mapping.scroll_docs(-4),
-          ['<c-f>'] = cmp.mapping.scroll_docs(4),
-
-          -- accept ([y]es) the completion.
-          --  this will auto-import if your lsp supports it.
-          --  this will expand snippets if the lsp sent a snippet.
-          ['<c-y>'] = cmp.mapping.confirm { select = true },
-
-          -- if you prefer more traditional completion keymaps,
-          -- you can uncomment the following lines
-          --['<cr>'] = cmp.mapping.confirm { select = true },
-          --['<tab>'] = cmp.mapping.select_next_item(),
-          --['<s-tab>'] = cmp.mapping.select_prev_item(),
-
-          -- manually trigger a completion from nvim-cmp.
-          --  generally you don't need this, because nvim-cmp will display
-          --  completions whenever it has completion options available.
-          ['<c-space>'] = cmp.mapping.complete {},
-
-          -- think of <c-l> as moving to the right of your snippet expansion.
-          --  so if you have a snippet that's like:
-          --  function $name($args)
-          --    $body
-          --  end
-          --
-          -- <c-l> will move you to the right of each of the expansion locations.
-          -- <c-h> is similar, except moving you backwards.
-          ['<c-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<c-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
-
-          -- for more advanced luasnip keymaps (e.g. selecting choice nodes, expansion) see:
-          --    https://github.com/l3mon4d3/luasnip?tab=readme-ov-file#keymaps
-        },
-        sources = {
-          {
-            name = 'lazydev',
-            -- set group index to 0 to skip loading luals completions as lazydev recommends it
-            group_index = 0,
-          },
-          { name = 'nvim_lsp' },
-          { name = 'luasnip' },
-          { name = 'path' },
-        },
-      }
-    end,
   },
 
   { -- you can easily change to a different colorscheme.
