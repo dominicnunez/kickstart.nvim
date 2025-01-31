@@ -83,6 +83,17 @@ vim.opt.cursorline = false
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
+-- Return cursor to last edit
+vim.api.nvim_create_autocmd('BufReadPost', {
+  pattern = '*',
+  callback = function()
+    local last_pos = vim.fn.line '\'"'
+    if last_pos > 1 and last_pos <= vim.fn.line '$' then
+      vim.api.nvim_win_set_cursor(0, { last_pos, 0 })
+    end
+  end,
+})
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 --  Escape inert mode keymap
@@ -811,12 +822,12 @@ require('lazy').setup({
   --  here are some example plugins that i've included in the kickstart repository.
   --  uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.gitsigns',
   -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- note: the import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    this is the easiest way to modularize your config.
