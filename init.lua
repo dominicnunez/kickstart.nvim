@@ -36,11 +36,11 @@ vim.opt.showmode = false
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-if vim.fn.has 'clipboard' == 1 then
-  vim.opt.clipboard = 'unnamedplus'
-else
-  print 'Clipboard not supported in this terminal!'
-end
+-- if vim.fn.has 'clipboard' == 1 then
+--   vim.opt.clipboard = 'unnamedplus'
+-- else
+--   print 'Clipboard not supported in this terminal!'
+-- end
 
 -- Enable break indent
 vim.opt.breakindent = true
@@ -97,7 +97,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 --  Escape inert mode keymap
-vim.keymap.set('i', 'jj', '<ESC>', { noremap = true, silent = true })
+vim.keymap.set('i', 'jk', '<ESC>', { noremap = true, silent = true })
 
 -- Quick save and quit
 vim.keymap.set('n', '<leader>w', ':w<CR>', { noremap = true, silent = true }) -- Save
@@ -116,21 +116,30 @@ vim.keymap.set('n', '<leader>tn', ':tabn<CR>', { noremap = true }) -- Next tab
 vim.keymap.set('n', '<leader>tp', ':tabp<CR>', { noremap = true }) -- Previous tab
 vim.keymap.set('n', '<leader>th', ':-tabmove<CR>', { noremap = true }) -- Move tab left
 vim.keymap.set('n', '<leader>tl', ':+tabmove<CR>', { noremap = true }) -- Move tab right
-vim.keymap.set('n', '<leader>tm', ':terminal<CR> | 3j | $ | a', { desc = 'Open [T]erminal' }, { noremap = true })
+vim.keymap.set('n', '<leader>tm', ':terminal<CR> | 3j | $ | a', { desc = 'Open [T]erminal', noremap = true })
 vim.keymap.set('n', '<leader>tt', ':tabnew | terminal<CR>', { noremap = true, silent = true })
 
+-- OS clipboard yank and paste
+vim.keymap.set('n', '<leader>op', '"+p', { noremap = true, silent = true, desc = 'Paste from OS clipboard' }) -- Paste after cursor
+vim.keymap.set('n', '<leader>oP', '"+P', { noremap = true, silent = true, desc = 'Paste before cursor from OS clipboard' }) -- Paste before cursor
+vim.keymap.set('v', '<leader>oy', '"+y', { noremap = true, silent = true, desc = 'Yank selection to OS clipboard' }) -- Yank selection
+
+-- Swap buffer
+vim.keymap.set('n', '<S-l>', ':bnext<CR>', { noremap = true, silent = true, desc = 'Go to next buffer' })
+vim.keymap.set('n', '<S-h>', ':bprevious<CR>', { noremap = true, silent = true, desc = 'Go to previous buffer' })
+
 -- Function to toggle between nvim-cmp and blink-cmp
-vim.g.completion_engine = 'blink-cmp' -- Default to nvim-cmp
+vim.g.completion_engine = 'blink-cmp' -- Default to blink-cmp
 
 function ToggleCompletionEngine()
   if vim.g.completion_engine == 'nvim-cmp' then
     vim.g.completion_engine = 'blink-cmp'
-    require('cmp').setup.buffer { enabled = false }
+    require('cmp').setup.buffer { enabled = false } -- Disable nvim-cmp for buffer
     require('blink-cmp').setup()
     print 'Switched to blink-cmp'
   else
     vim.g.completion_engine = 'nvim-cmp'
-    require('cmp').setup()
+    require('cmp').setup.buffer { enabled = true } -- Re-enable nvim-cmp for buffer
     print 'Switched to nvim-cmp'
   end
 end
