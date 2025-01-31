@@ -195,6 +195,31 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Custom rename command
+vim.api.nvim_create_user_command('Rename', function(opts)
+  local old_name = vim.fn.expand '%:p' -- Full path of the current file
+  local new_name = vim.fn.fnamemodify(opts.args, ':p') -- Full path of the new name
+
+  if old_name == new_name or new_name == '' then
+    print '❌ Invalid file name'
+    return
+  end
+
+  -- Save as new file
+  vim.cmd('saveas ' .. new_name)
+
+  -- Force delete old buffer (ensures it's fully removed)
+  vim.cmd('bdelete! ' .. vim.fn.bufnr(old_name))
+
+  -- Delete the old file from disk
+  vim.fn.delete(old_name)
+
+  -- Open the renamed file in the current buffer
+  vim.cmd('edit ' .. new_name)
+
+  print('✅ Renamed ' .. old_name .. ' → ' .. new_name)
+end, { nargs = 1 })
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
